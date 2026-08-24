@@ -1,6 +1,5 @@
 # Architektur
 
-## Block 3: Standalone
 
 Das Dashboard und die Control API laufen als getrennte Deployments. Die Control API besitzt vorerst den In-Memory-Zustand und führt die Simulation aus.
 
@@ -11,8 +10,6 @@ flowchart LR
     API --> Engine[In-Memory Simulation]
     Engine -->|SSE| Browser
 ```
-
-Die bewusste Einschränkung ist sichtbar: `control-api` darf noch nicht horizontal skaliert werden. Mehrere Replicas hätten voneinander abweichende Zustände. Messaging und Persistenz lösen dies in späteren Blöcken.
 
 ## Komponenten
 
@@ -65,3 +62,4 @@ Images entstehen aus zwei Multi-Stage-Dockerfiles (`build/go-service.Dockerfile`
 - Kein geteilter Zustand: `control-api` skaliert nicht horizontal.
 - Kein Ingress: Zugriff erfolgt über `port-forward`.
 - Keine Persistenz: ein Neustart verliert alle Bestellungen (`Hydrate` ist für spätere Blöcke bereits vorbereitet).
+=======
