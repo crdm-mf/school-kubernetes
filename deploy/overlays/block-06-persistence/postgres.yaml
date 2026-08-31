@@ -27,6 +27,7 @@ metadata:
     app.kubernetes.io/part-of: food-delivery
 spec:
   instances: 2
+  imageName: ghcr.io/cloudnative-pg/postgresql:18.4-system-trixie
   primaryUpdateStrategy: unsupervised
   bootstrap:
     initdb:
@@ -37,6 +38,10 @@ spec:
   storage:
     size: 1Gi
     storageClass: local-path
+  affinity:
+    enablePodAntiAffinity: true
+    topologyKey: kubernetes.io/hostname
+    podAntiAffinityType: required
   resources:
     requests:
       cpu: 100m
