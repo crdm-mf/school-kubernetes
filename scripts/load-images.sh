@@ -10,4 +10,5 @@ k3d image import -c "${CLUSTER}" \
   "food-delivery-restaurant-worker:${TAG}" \
   "food-delivery-courier-simulator:${TAG}" \
   "food-delivery-order-worker:${TAG}" \
+  "food-delivery-migrate:${TAG}" \
   "food-delivery-dashboard:${TAG}"

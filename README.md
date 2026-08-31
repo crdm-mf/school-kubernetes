@@ -1,79 +1,34 @@
-# Block 4 - Ingress und Load Balancing
+# Block 6 - CloudNativePG und Persistenz
 
-Dieser Baustein erweitert den eigenen Projektstand aus Block 3. Er liefert:
+Dieser Baustein ersetzt die fluechtige Projektion durch PostgreSQL. CloudNativePG verwaltet zwei Datenbankinstanzen, Rollenwechsel und den schreibbaren Service; der `order-worker` persistiert idempotent.
 
-- ein Traefik-Ingress fuer einen gemeinsamen HTTP-Einstiegspunkt,
-- zwei Dashboard-Replikas fuer sichtbares Load Balancing,
-- den Endpunkt `/ui-instance` zur Anzeige des antwortenden Dashboard-Pods.
+## Verwendung im Kurs
 
-Die `control-api` bleibt bei einer Replik, weil ihr Zustand in Block 4 noch im Speicher liegt.
+- Privates Integrationspaket fuer das bestehende Studierenden-Repository
+- Kein neues Abgabe-Repository: Die Aenderungen werden in den fortlaufenden Projektstand uebernommen
+- Fuer einen reproduzierbaren Stand ist der Release `v1.0.0` zu verwenden
+- Die enthaltenen Zugangsdaten sind ausschliesslich fuer das lokale Kurs-Lab bestimmt
 
-## 1. Baustein uebernehmen
+## Enthalten
 
-Fuehren Sie das Installationsskript aus Ihrem eigenen Projekt-Repository aus. Der Pfad zum Baustein kann bei Ihnen abweichen.
+- CNPG-Installation per Helm und `Cluster`-Ressource mit zwei Instanzen
+- SQL-Migration fuer aktuelle Projektionen, Eventhistorie und `processed_events`
+- Migrationsjob und Secret-basierte Datenbankverbindung
+- PostgreSQL-Repository sowie DB-faehiger `order-worker` und `control-api`
+- Persistente Customer-/Courier-Registrierung, Pickup-Phase und Strassenpositionen
 
-PowerShell:
+## Arbeitsauftrag
 
-```powershell
-..\vsc-dispatch-city-04-ingress\install.ps1 -Target .
-```
-
-macOS, Linux, Git Bash oder WSL:
-
-```bash
-../vsc-dispatch-city-04-ingress/install.sh .
-```
-
-Das Skript sichert die bisherige Dashboard-Seite einmalig unter `.block-backups/dashboard-index.block-03.vue`.
-
-## 2. Dashboard neu bauen und deployen
-
-PowerShell:
-
-```powershell
-docker build -t food-delivery-dashboard:local .\apps\dashboard
-k3d image import -c teko-k8s food-delivery-dashboard:local
-kubectl apply -k .\deploy\overlays\block-04-ingress
-kubectl -n food-delivery rollout restart deployment/dashboard
-kubectl -n food-delivery rollout status deployment/dashboard
-```
-
-macOS, Linux, Git Bash oder WSL:
+1. Operator, Custom Resource und erzeugte Kubernetes-Ressourcen zuordnen.
+2. CNPG installieren und die Persistenzkomponenten in Block 5 integrieren.
+3. Schreib- und Lesezugriffe sowie die Rolle von `-rw`, `-ro` und `-r` Services pruefen.
+4. Doppelte Event-IDs senden und die Idempotenz nachweisen.
+5. Den Primary-Pod loeschen und Failover, Datenbestand sowie Anwendung beobachten.
 
 ```bash
-docker build -t food-delivery-dashboard:local ./apps/dashboard
-k3d image import -c teko-k8s food-delivery-dashboard:local
-kubectl apply -k ./deploy/overlays/block-04-ingress
-kubectl -n food-delivery rollout restart deployment/dashboard
-kubectl -n food-delivery rollout status deployment/dashboard
+CONTEXT=k3d-delivery-lab ./platform/cloudnative-pg/install.sh
+kubectl --context k3d-delivery-lab apply -k deploy/overlays/block-06-persistence
+kubectl --context k3d-delivery-lab -n food-delivery get cluster,pods
 ```
 
-## 3. Traefik lokal oeffnen
-
-Der Cluster aus Block 2 besitzt keine feste Host-Port-Zuordnung. Deshalb wird der bereits installierte Traefik-Service lokal weitergeleitet:
-
-```powershell
-kubectl -n kube-system port-forward service/traefik 8080:80
-```
-
-Danach sind Dashboard und API ueber denselben Einstiegspunkt erreichbar:
-
-- Dashboard: `http://localhost:8080/`
-- Snapshot: `http://localhost:8080/api/v1/snapshot`
-- Readiness: `http://localhost:8080/health/ready`
-
-## 4. Load Balancing sichtbar machen
-
-PowerShell:
-
-```powershell
-1..20 | ForEach-Object { (Invoke-RestMethod -Headers @{ Connection = "close" } http://localhost:8080/ui-instance).instance } | Sort-Object -Unique
-```
-
-macOS, Linux, Git Bash oder WSL:
-
-```bash
-for i in $(seq 1 20); do curl -s -H 'Connection: close' http://localhost:8080/ui-instance; echo; done | sort -u
-```
-
-Erwartetes Resultat: In der Ausgabe erscheinen die Namen beider Dashboard-Pods.
+Abnahme: PostgreSQL meldet `2/2` Instanzen, Bestellungen und permanente Kurierpositionen ueberleben Worker-Neustarts und ein Primary-Failover fuehrt nicht zu verlorenem Projektzustand.
