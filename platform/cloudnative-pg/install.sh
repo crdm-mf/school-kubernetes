@@ -2,7 +2,7 @@
 set -eu
 
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
-CONTEXT=${CONTEXT:-k3d-teko-k8s}
+CONTEXT=${CONTEXT:-k3d-delivery-lab}
 CHART_VERSION=${CHART_VERSION:-0.29.0}
 
 helm repo add cnpg https://cloudnative-pg.github.io/charts --force-update

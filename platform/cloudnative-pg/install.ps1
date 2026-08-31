@@ -1,5 +1,5 @@
 param(
-    [string]$Context = "k3d-teko-k8s",
+    [string]$Context = "k3d-delivery-lab",
     [string]$ChartVersion = "0.29.0"
 )
 

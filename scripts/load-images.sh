@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 set -eu
 
-CLUSTER=${CLUSTER:-teko-k8s}
+CLUSTER=${CLUSTER:-delivery-lab}
 TAG=${TAG:-local}
 
 k3d image import -c "${CLUSTER}" \

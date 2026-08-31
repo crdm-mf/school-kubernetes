@@ -29,16 +29,16 @@ Das Installationsskript wird im Wurzelverzeichnis des bestehenden Projekts ausge
 ../vsc-dispatch-city-06-persistence/install.sh .
 ./platform/cloudnative-pg/install.sh
 ./scripts/build-images.sh
-CLUSTER=teko-k8s ./scripts/load-images.sh
-kubectl --context k3d-teko-k8s apply -k deploy/overlays/block-06-persistence
+CLUSTER=delivery-lab ./scripts/load-images.sh
+kubectl --context k3d-delivery-lab apply -k deploy/overlays/block-06-persistence
 ```
 
 ```powershell
 & "..\vsc-dispatch-city-06-persistence\install.ps1" -Target "."
 ./platform/cloudnative-pg/install.ps1
 ./scripts/build-images.ps1
-./scripts/load-images.ps1 -Cluster teko-k8s
-kubectl --context k3d-teko-k8s apply -k deploy/overlays/block-06-persistence
+./scripts/load-images.ps1 -Cluster delivery-lab
+kubectl --context k3d-delivery-lab apply -k deploy/overlays/block-06-persistence
 ```
 
 ## Abnahme

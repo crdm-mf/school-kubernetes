@@ -1,5 +1,5 @@
 param(
-    [string]$Cluster = "teko-k8s",
+    [string]$Cluster = "delivery-lab",
     [string]$Tag = "local"
 )
 
