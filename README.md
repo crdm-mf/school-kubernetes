@@ -1,34 +1,50 @@
-# Block 6 - CloudNativePG und Persistenz
+# Block 6 - Helm, Operator und CloudNativePG
 
-Dieser Baustein ersetzt die fluechtige Projektion durch PostgreSQL. CloudNativePG verwaltet zwei Datenbankinstanzen, Rollenwechsel und den schreibbaren Service; der `order-worker` persistiert idempotent.
+Dieser Baustein erweitert den Stand aus Block 5 um persistente Projektionen. CloudNativePG verwaltet einen PostgreSQL-Cluster mit Primary und Standby; der `order-worker` schreibt fachlichen Zustand und Idempotenzinformationen transaktional in die Datenbank.
 
 ## Verwendung im Kurs
 
-- Privates Integrationspaket fuer das bestehende Studierenden-Repository
-- Kein neues Abgabe-Repository: Die Aenderungen werden in den fortlaufenden Projektstand uebernommen
-- Fuer einen reproduzierbaren Stand ist der Release `v1.0.0` zu verwenden
+- Integrationspaket fuer das fortlaufende Studierendenprojekt
+- Startpunkt ist der funktionsfaehige Block-5-Stand
+- Fuer den Kurs ist der reproduzierbare Release `v1.1.0` zu verwenden
+- Docker Desktop, k3d, kubectl, Helm, Git und ein Browser genuegen
+- Bash/macOS/WSL/Git Bash und Windows PowerShell werden unterstuetzt
 - Die enthaltenen Zugangsdaten sind ausschliesslich fuer das lokale Kurs-Lab bestimmt
 
 ## Enthalten
 
-- CNPG-Installation per Helm und `Cluster`-Ressource mit zwei Instanzen
-- SQL-Migration fuer aktuelle Projektionen, Eventhistorie und `processed_events`
+- CloudNativePG Operator `1.30.0` als Helm Chart `0.29.0`
+- `Cluster` Custom Resource mit zwei PostgreSQL-18.4-Instanzen auf getrennten Nodes
+- je ein PVC pro Instanz sowie stabile Services fuer Schreib- und Lesezugriffe
+- SQL-Migration fuer Projektionen, Eventhistorie und `processed_events`
 - Migrationsjob und Secret-basierte Datenbankverbindung
-- PostgreSQL-Repository sowie DB-faehiger `order-worker` und `control-api`
-- Persistente Customer-/Courier-Registrierung, Pickup-Phase und Strassenpositionen
+- PostgreSQL-Repository fuer `order-worker` und `control-api`
+- reproduzierbarer Idempotenz-Test mit gleicher `event_id`
 
-## Arbeitsauftrag
+## Integration
 
-1. Operator, Custom Resource und erzeugte Kubernetes-Ressourcen zuordnen.
-2. CNPG installieren und die Persistenzkomponenten in Block 5 integrieren.
-3. Schreib- und Lesezugriffe sowie die Rolle von `-rw`, `-ro` und `-r` Services pruefen.
-4. Doppelte Event-IDs senden und die Idempotenz nachweisen.
-5. Den Primary-Pod loeschen und Failover, Datenbestand sowie Anwendung beobachten.
+Das Installationsskript wird im Wurzelverzeichnis des bestehenden Projekts ausgefuehrt. Es ergaenzt den Code und das Overlay, ohne das Dashboard zu ersetzen.
 
 ```bash
-CONTEXT=k3d-delivery-lab ./platform/cloudnative-pg/install.sh
-kubectl --context k3d-delivery-lab apply -k deploy/overlays/block-06-persistence
-kubectl --context k3d-delivery-lab -n food-delivery get cluster,pods
+../vsc-dispatch-city-06-persistence/install.sh .
+./platform/cloudnative-pg/install.sh
+./scripts/build-images.sh
+CLUSTER=teko-k8s ./scripts/load-images.sh
+kubectl --context k3d-teko-k8s apply -k deploy/overlays/block-06-persistence
 ```
 
-Abnahme: PostgreSQL meldet `2/2` Instanzen, Bestellungen und permanente Kurierpositionen ueberleben Worker-Neustarts und ein Primary-Failover fuehrt nicht zu verlorenem Projektzustand.
+```powershell
+& "..\vsc-dispatch-city-06-persistence\install.ps1" -Target "."
+./platform/cloudnative-pg/install.ps1
+./scripts/build-images.ps1
+./scripts/load-images.ps1 -Cluster teko-k8s
+kubectl --context k3d-teko-k8s apply -k deploy/overlays/block-06-persistence
+```
+
+## Abnahme
+
+- CloudNativePG meldet zwei bereite Instanzen.
+- `food-delivery-db-rw` zeigt auf den aktuellen Primary.
+- Eine Bestellung bleibt nach Neustarts von `order-worker` und `control-api` erhalten.
+- Eine doppelt publizierte `event_id` wird nur einmal in `processed_events` gespeichert.
+- Nach dem Loeschen des Primary-Pods wird ein Standby automatisch zum Primary.

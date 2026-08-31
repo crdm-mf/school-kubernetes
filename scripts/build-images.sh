@@ -9,3 +9,5 @@ for SERVICE in customer-simulator restaurant-worker courier-simulator order-work
   docker build -t "food-delivery-${SERVICE}:${TAG}" --build-arg SERVICE="${SERVICE}" -f "${ROOT}/build/go-service.Dockerfile" "${ROOT}"
 done
 docker build -t "food-delivery-migrate:${TAG}" --build-arg SERVICE=migrate -f "${ROOT}/build/go-service.Dockerfile" "${ROOT}"
+
+printf 'Block-6-Go-Images wurden mit Tag %s gebaut. Das Dashboard-Image bleibt aus Block 5 erhalten.\n' "${TAG}"
