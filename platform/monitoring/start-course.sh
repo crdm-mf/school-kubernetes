@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 set -eu
-CONTEXT=${CONTEXT:-k3d-teko-k8s}
-CLUSTER=${CLUSTER:-teko-k8s}
+CONTEXT=${CONTEXT:-k3d-delivery-lab}
+CLUSTER=${CLUSTER:-delivery-lab}
 ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
 kubectl --context "$CONTEXT" -n food-delivery get cluster food-delivery-db >/dev/null
 docker build -t food-delivery-cluster-observer:local --build-arg SERVICE=cluster-observer -f "$ROOT/build/go-service.Dockerfile" "$ROOT"

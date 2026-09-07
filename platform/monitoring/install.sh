@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 set -eu
 
-CONTEXT=${CONTEXT:-k3d-teko-k8s}
+CONTEXT=${CONTEXT:-k3d-delivery-lab}
 CHART_VERSION=${CHART_VERSION:-88.1.3}
 ROOT=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 

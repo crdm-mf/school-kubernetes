@@ -48,12 +48,12 @@ sh platform/monitoring/start-course.sh
 Die Integration kopiert nur die Dateien dieses Bausteins. Sie ersetzt weder
 Dashboard noch vorhandene App-Dienste. Der Start baut und importiert das
 Observer-Image, installiert den Helm-Stack und wendet das Block-7-Overlay an.
-Standard: Cluster `teko-k8s`, Kontext `k3d-teko-k8s`.
+Standard: Cluster `delivery-lab`, Kontext `k3d-delivery-lab`.
 
 Grafana in einem eigenen Terminal oeffnen:
 
 ```text
-kubectl --context k3d-teko-k8s -n monitoring port-forward service/monitoring-grafana 3000:80
+kubectl --context k3d-delivery-lab -n monitoring port-forward service/monitoring-grafana 3000:80
 ```
 
 Browser: http://localhost:3000. Anmeldung: `admin` / `delivery`.
