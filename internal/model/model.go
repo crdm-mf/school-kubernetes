@@ -13,11 +13,13 @@ type Position struct {
 
 // Restaurant is a configured order destination.
 type Restaurant struct {
-	ID       string   `json:"id"`
-	Name     string   `json:"name"`
-	Cuisine  string   `json:"cuisine"`
-	Position Position `json:"position"`
-	Status   string   `json:"status"`
+	ID            string   `json:"id"`
+	Name          string   `json:"name"`
+	Cuisine       string   `json:"cuisine"`
+	Position      Position `json:"position"`
+	Status        string   `json:"status"`
+	Replicas      int      `json:"replicas"`
+	ReadyReplicas int      `json:"ready_replicas"`
 }
 
 // Customer represents the delivery destination of an order.
@@ -25,6 +27,8 @@ type Customer struct {
 	ID       string   `json:"id"`
 	Name     string   `json:"name"`
 	Position Position `json:"position"`
+	Status   string   `json:"status,omitempty"`
+	PodName  string   `json:"pod_name,omitempty"`
 }
 
 // Courier is a moving delivery vehicle.
@@ -34,6 +38,7 @@ type Courier struct {
 	Position Position `json:"position"`
 	Status   string   `json:"status"`
 	OrderID  string   `json:"order_id,omitempty"`
+	PodName  string   `json:"pod_name,omitempty"`
 }
 
 // Order is the current projection of a delivery order.
