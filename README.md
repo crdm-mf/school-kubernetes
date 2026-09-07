@@ -1,50 +1,85 @@
-# Block 6 - Helm, Operator und CloudNativePG
+# Block 7: Kubernetes im Betrieb
 
-Dieser Baustein erweitert den Stand aus Block 5 um persistente Projektionen. CloudNativePG verwaltet einen PostgreSQL-Cluster mit Primary und Standby; der `order-worker` schreibt fachlichen Zustand und Idempotenzinformationen transaktional in die Datenbank.
+Material zu Arbeitsblatt 07. Dieser Baustein erweitert den funktionierenden
+Projektstand nach AB6. Er ist kein eigenstaendiges Projekt.
 
-## Verwendung im Kurs
+## Kursversion
 
-- Integrationspaket fuer das fortlaufende Studierendenprojekt
-- Startpunkt ist der funktionsfaehige Block-5-Stand
-- Fuer den Kurs ist der reproduzierbare Release `v1.1.0` zu verwenden
-- Docker Desktop, k3d, kubectl, Helm, Git und ein Browser genuegen
-- Bash/macOS/WSL/Git Bash und Windows PowerShell werden unterstuetzt
-- Die enthaltenen Zugangsdaten sind ausschliesslich fuer das lokale Kurs-Lab bestimmt
+[Release v1.1.0](https://github.com/SwitzerChees/vsc-dispatch-city-07-observability/releases/tag/v1.1.0)
+passt zum aktuellen Arbeitsblatt 07.
+[Kurs-ZIP herunterladen](https://github.com/SwitzerChees/vsc-dispatch-city-07-observability/releases/download/v1.1.0/vsc-dispatch-city-07-observability-v1.1.0.zip).
 
-## Enthalten
+Das angehaengte Kurs-ZIP verwenden, nicht GitHubs automatisch erzeugtes
+"Source code (zip)". Der enthaltene Ordner heisst
+`vsc-dispatch-city-07-observability`; darin liegen `install.sh` und `install.ps1`.
 
-- CloudNativePG Operator `1.30.0` als Helm Chart `0.29.0`
-- `Cluster` Custom Resource mit zwei PostgreSQL-18.4-Instanzen auf getrennten Nodes
-- je ein PVC pro Instanz sowie stabile Services fuer Schreib- und Lesezugriffe
-- SQL-Migration fuer Projektionen, Eventhistorie und `processed_events`
-- Migrationsjob und Secret-basierte Datenbankverbindung
-- PostgreSQL-Repository fuer `order-worker` und `control-api`
-- reproduzierbarer Idempotenz-Test mit gleicher `event_id`
+## Inhalt
 
-## Integration
+- Prometheus und Grafana als `kube-prometheus-stack`, Version `88.1.3`.
+- Dashboard "Dispatch City - Betrieb" mit fuenf Anzeigen.
+- Messpunkte fuer Anwendung, RabbitMQ und PostgreSQL.
+- Cluster-Observer mit lesendem, auf `food-delivery` begrenztem RBAC.
+- Kleines NGINX-Lab fuer Readiness, Rollback und HPA in `betrieb-lab`.
 
-Das Installationsskript wird im Wurzelverzeichnis des bestehenden Projekts ausgefuehrt. Es ergaenzt den Code und das Overlay, ohne das Dashboard zu ersetzen.
+Der Einstieg benoetigt Docker Desktop, k3d, kubectl, Helm und Internet.
+AB6 mit CloudNativePG muss bereits laufen. Der Monitoring-Stack ist fuer das
+lokale Kurs-Lab reduziert; feste Zugangsdaten sind nicht fuer Produktion gedacht.
 
-```bash
-../vsc-dispatch-city-06-persistence/install.sh .
-./platform/cloudnative-pg/install.sh
-./scripts/build-images.sh
-CLUSTER=delivery-lab ./scripts/load-images.sh
-kubectl --context k3d-delivery-lab apply -k deploy/overlays/block-06-persistence
-```
+## In das bestehende Projekt integrieren
+
+Entpackten Materialordner neben den Projektordner legen. Alle folgenden Befehle
+im bestehenden Projektordner ausfuehren, jeweils als eigene Zeile.
+
+Windows PowerShell:
 
 ```powershell
-& "..\vsc-dispatch-city-06-persistence\install.ps1" -Target "."
-./platform/cloudnative-pg/install.ps1
-./scripts/build-images.ps1
-./scripts/load-images.ps1 -Cluster delivery-lab
-kubectl --context k3d-delivery-lab apply -k deploy/overlays/block-06-persistence
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+& '..\vsc-dispatch-city-07-observability\install.ps1' -Target '.'
+./platform/monitoring/start-course.ps1
 ```
 
-## Abnahme
+macOS oder WSL mit Bash:
 
-- CloudNativePG meldet zwei bereite Instanzen.
-- `food-delivery-db-rw` zeigt auf den aktuellen Primary.
-- Eine Bestellung bleibt nach Neustarts von `order-worker` und `control-api` erhalten.
-- Eine doppelt publizierte `event_id` wird nur einmal in `processed_events` gespeichert.
-- Nach dem Loeschen des Primary-Pods wird ein Standby automatisch zum Primary.
+```bash
+sh ../vsc-dispatch-city-07-observability/install.sh .
+sh platform/monitoring/start-course.sh
+```
+
+Die Integration kopiert nur die Dateien dieses Bausteins. Sie ersetzt weder
+Dashboard noch vorhandene App-Dienste. Der Start baut und importiert das
+Observer-Image, installiert den Helm-Stack und wendet das Block-7-Overlay an.
+Standard: Cluster `teko-k8s`, Kontext `k3d-teko-k8s`.
+
+Grafana in einem eigenen Terminal oeffnen:
+
+```text
+kubectl --context k3d-teko-k8s -n monitoring port-forward service/monitoring-grafana 3000:80
+```
+
+Browser: http://localhost:3000. Anmeldung: `admin` / `delivery`.
+Unter Dashboards "Dispatch City - Betrieb" waehlen. Erste Daten brauchen
+etwa eine Minute. "No data" ist kein Messwert von null.
+
+## Die fuenf Aufgaben
+
+1. Monitoring starten und zwei Anzeigen erklaeren.
+2. Pizza-Worker auf null skalieren, Rueckstau beobachten und auf eins zurueckstellen.
+3. `labs/block-07/web.yaml` anwenden, Readiness-Datei verschieben und wiederherstellen.
+4. Ungueltigen Image-Tag setzen, Events lesen und manuell zurueckrollen.
+5. HPA-Grenze von drei auf vier erhoehen und den begrenzten Lasttest ausfuehren.
+
+Das Arbeitsblatt enthaelt die einzelnen Schritte. Der Lasttest erzeugt 150
+Sekunden CPU-Last in einem Pod, danach endet er selbst. Der HPA nutzt den
+Metrics Server aus k3s. Prometheus ist nicht seine CPU-Datenquelle.
+
+## Erwarteter Endzustand
+
+- Anwendung und PostgreSQL laufen weiter; `restaurant-pizza` hat eine Replica.
+- Grafana zeigt Messwerte, der absichtlich erzeugte Rueckstau hat sich abgebaut.
+- `betrieb-lab/lab-web` laeuft wieder mit dem gueltigen NGINX-Image und zwei
+  bereiten Pods. Der HPA hat min=2, max=4 und CPU-Ziel 50 Prozent.
+- Die eigene `labs/block-07/hpa.yaml` enthaelt ebenfalls maxReplicas=4.
+
+Zur Fehlersuche zuerst `kubectl get pods`, `kubectl describe` und die Logs
+im betroffenen Namespace pruefen. Weitere Demos aus der Referenzimplementation
+sind nicht Teil dieses schlanken Materialpakets.

@@ -1,20 +1,13 @@
 #!/usr/bin/env sh
 set -eu
-
-SOURCE_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
-TARGET_DIR=${1:-.}
-
-if [ ! -f "$TARGET_DIR/deploy/overlays/block-05-messaging/kustomization.yaml" ]; then
-  echo "Im Ziel fehlt der Projektstand aus Block 5 (deploy/overlays/block-05-messaging)." >&2
+SOURCE=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+TARGET=${1:-.}
+test -f "$TARGET/deploy/overlays/block-06-persistence/kustomization.yaml" || {
+  echo 'Im Ziel fehlt der Projektstand aus AB6.' >&2
   exit 1
-fi
-
-for DIR in build cmd docs internal scripts platform/cloudnative-pg deploy/overlays/block-06-persistence; do
-  mkdir -p "$TARGET_DIR/$DIR"
-  cp -R "$SOURCE_DIR/$DIR/." "$TARGET_DIR/$DIR/"
+}
+for DIR in cmd/cluster-observer internal/cluster platform/monitoring deploy/overlays/block-07-observability labs/block-07; do
+  mkdir -p "$TARGET/$DIR"
+  cp -R "$SOURCE/$DIR/." "$TARGET/$DIR/"
 done
-
-cp "$SOURCE_DIR/go.mod" "$SOURCE_DIR/go.sum" "$TARGET_DIR/"
-
-printf 'Block 6 wurde in %s installiert.\n' "$TARGET_DIR"
-printf 'Naechster Schritt: CloudNativePG per Helm installieren, Images bauen und das Block-6-Overlay anwenden.\n'
+echo 'AB7 integriert. Weiter mit platform/monitoring/start-course.sh.'

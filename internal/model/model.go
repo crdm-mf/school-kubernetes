@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-// Position is a point on the simulated city grid.
+// Position is a point on the simulated 12 by 12 city grid.
 type Position struct {
 	X float64 `json:"x"`
 	Y float64 `json:"y"`
@@ -13,13 +13,11 @@ type Position struct {
 
 // Restaurant is a configured order destination.
 type Restaurant struct {
-	ID            string   `json:"id"`
-	Name          string   `json:"name"`
-	Cuisine       string   `json:"cuisine"`
-	Position      Position `json:"position"`
-	Status        string   `json:"status"`
-	Replicas      int      `json:"replicas"`
-	ReadyReplicas int      `json:"ready_replicas"`
+	ID       string   `json:"id"`
+	Name     string   `json:"name"`
+	Cuisine  string   `json:"cuisine"`
+	Position Position `json:"position"`
+	Status   string   `json:"status"`
 }
 
 // Customer represents the delivery destination of an order.
@@ -27,8 +25,6 @@ type Customer struct {
 	ID       string   `json:"id"`
 	Name     string   `json:"name"`
 	Position Position `json:"position"`
-	Status   string   `json:"status,omitempty"`
-	PodName  string   `json:"pod_name,omitempty"`
 }
 
 // Courier is a moving delivery vehicle.
@@ -38,7 +34,6 @@ type Courier struct {
 	Position Position `json:"position"`
 	Status   string   `json:"status"`
 	OrderID  string   `json:"order_id,omitempty"`
-	PodName  string   `json:"pod_name,omitempty"`
 }
 
 // Order is the current projection of a delivery order.
