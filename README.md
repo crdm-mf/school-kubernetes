@@ -214,7 +214,6 @@ Ansichten ab:
 ## Eingesetzte Hilfsmittel
 
 
-- **Claude Code (Anthropic)**: Unterstützung beim Review des Repo, beim Formulieren dieses README sowie beim Ableiten der
-  Reflexion aus den Arbeitsblättern und dem Repository-Zustand.
+- **Claude Code (Anthropic)**: Unterstützung beim Review des Repo, beim Formulieren dieses README aus den Arbeitsblättern und dem Repository-Zustand.
 - **Von der Lehrperson bereitgestellte Kursstände sind unverändert übernommen und über die Commit-Historie
 nachvollziehbar.**
