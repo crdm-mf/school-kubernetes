@@ -1,0 +1,52 @@
+== rabbitmqctl list_exchanges ==
+Listing exchanges for vhost / ...
+name	type
+	direct
+amq.direct	direct
+amq.fanout	fanout
+amq.headers	headers
+amq.match	headers
+amq.rabbitmq.log	topic
+amq.rabbitmq.trace	topic
+amq.topic	topic
+food.dlx	topic
+food.events	topic
+
+== rabbitmqctl list_queues ==
+Timeout: 60.0 seconds ...
+Listing queues for vhost / ...
+name	messages	consumers
+food.dead	0	0
+simulation-control.customer-simulator-0	0	1
+courier-dispatch	1	1
+order-projection	0	2
+restaurant.restaurant-pizza	0	1
+restaurant.restaurant-curry	0	1
+restaurant.restaurant-bowl	0	1
+live.control-api-56cc785c5c-xnrg8	0	1
+live.control-api-56cc785c5c-w2vtl	0	1
+
+== rabbitmqctl list_bindings ==
+Listing bindings for vhost /...
+source_name	source_kind	destination_name	destination_kind	routing_key
+	exchange	food.dead	queue	food.dead
+	exchange	simulation-control.customer-simulator-0	queue	simulation-control.customer-simulator-0
+	exchange	courier-dispatch	queue	courier-dispatch
+	exchange	order-projection	queue	order-projection
+	exchange	restaurant.restaurant-pizza	queue	restaurant.restaurant-pizza
+	exchange	restaurant.restaurant-curry	queue	restaurant.restaurant-curry
+	exchange	restaurant.restaurant-bowl	queue	restaurant.restaurant-bowl
+	exchange	live.control-api-56cc785c5c-xnrg8	queue	live.control-api-56cc785c5c-xnrg8
+	exchange	live.control-api-56cc785c5c-w2vtl	queue	live.control-api-56cc785c5c-w2vtl
+food.events	exchange	order-projection	queue	simulation.#
+food.events	exchange	order-projection	queue	courier.#
+food.events	exchange	restaurant.restaurant-pizza	queue	order.created.restaurant-pizza
+food.events	exchange	live.control-api-56cc785c5c-xnrg8	queue	#
+food.events	exchange	order-projection	queue	order.#
+food.events	exchange	live.control-api-56cc785c5c-w2vtl	queue	#
+food.events	exchange	restaurant.restaurant-curry	queue	order.created.restaurant-curry
+food.events	exchange	restaurant.restaurant-bowl	queue	order.created.restaurant-bowl
+food.dlx	exchange	food.dead	queue	#
+food.events	exchange	simulation-control.customer-simulator-0	queue	simulation.#
+food.events	exchange	courier-dispatch	queue	order.accepted
+food.events	exchange	order-projection	queue	customer.#

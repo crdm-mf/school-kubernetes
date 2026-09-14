@@ -1,0 +1,44 @@
+== kubectl get hpa (falls vorhanden) ==
+No resources found in food-delivery namespace.
+
+== kubectl get pods (post failure-demo) ==
+NAME                                READY   STATUS    RESTARTS   AGE   IP           NODE                        NOMINATED NODE   READINESS GATES
+cluster-observer-6dc567bfdd-scph6   1/1     Running   0          20m   10.42.2.10   k3d-delivery-lab-agent-0    <none>           <none>
+control-api-56cc785c5c-w2vtl        1/1     Running   0          20m   10.42.2.11   k3d-delivery-lab-agent-0    <none>           <none>
+control-api-56cc785c5c-xnrg8        1/1     Running   0          20m   10.42.0.12   k3d-delivery-lab-server-0   <none>           <none>
+courier-simulator-0                 1/1     Running   0          20m   10.42.2.12   k3d-delivery-lab-agent-0    <none>           <none>
+customer-simulator-0                1/1     Running   0          20m   10.42.0.11   k3d-delivery-lab-server-0   <none>           <none>
+dashboard-75dbdc8bb6-vbk9s          1/1     Running   0          20m   10.42.0.13   k3d-delivery-lab-server-0   <none>           <none>
+dashboard-75dbdc8bb6-xhwsg          1/1     Running   0          20m   10.42.2.13   k3d-delivery-lab-agent-0    <none>           <none>
+food-delivery-db-1                  1/1     Running   0          19m   10.42.0.20   k3d-delivery-lab-server-0   <none>           <none>
+food-delivery-db-2                  1/1     Running   0          18m   10.42.2.18   k3d-delivery-lab-agent-0    <none>           <none>
+order-worker-c646dfd47-4mtzs        1/1     Running   0          20m   10.42.2.9    k3d-delivery-lab-agent-0    <none>           <none>
+order-worker-c646dfd47-7kz82        1/1     Running   0          20m   10.42.0.14   k3d-delivery-lab-server-0   <none>           <none>
+order-worker-c646dfd47-9g867        1/1     Running   0          17s   10.42.2.19   k3d-delivery-lab-agent-0    <none>           <none>
+order-worker-c646dfd47-bkw68        1/1     Running   0          17s   10.42.0.22   k3d-delivery-lab-server-0   <none>           <none>
+rabbitmq-0                          1/1     Running   0          20m   10.42.2.15   k3d-delivery-lab-agent-0    <none>           <none>
+restaurant-bowl-7d5b5d859b-sgxgs    1/1     Running   0          20m   10.42.2.8    k3d-delivery-lab-agent-0    <none>           <none>
+restaurant-curry-6f7bcfb9f7-67j5d   1/1     Running   0          20m   10.42.0.15   k3d-delivery-lab-server-0   <none>           <none>
+restaurant-pizza-6b7d8c5486-ksgcq   1/1     Running   0          17s   10.42.0.21   k3d-delivery-lab-server-0   <none>           <none>
+
+== kubectl get servicemonitors,podmonitors ==
+NAME                                                          AGE
+servicemonitor.monitoring.coreos.com/food-delivery-services   20m
+servicemonitor.monitoring.coreos.com/rabbitmq                 20m
+
+NAME                                                      AGE
+podmonitor.monitoring.coreos.com/food-delivery-postgres   20m
+
+== rabbitmqctl list_queues (post-load) ==
+Timeout: 60.0 seconds ...
+Listing queues for vhost / ...
+name	messages	consumers
+food.dead	0	0
+simulation-control.customer-simulator-0	0	1
+courier-dispatch	12	1
+order-projection	0	4
+restaurant.restaurant-pizza	0	1
+restaurant.restaurant-curry	0	1
+restaurant.restaurant-bowl	0	1
+live.control-api-56cc785c5c-xnrg8	0	1
+live.control-api-56cc785c5c-w2vtl	0	1

@@ -1,0 +1,12 @@
+deployment.apps/cluster-observer condition met
+deployment.apps/control-api condition met
+deployment.apps/dashboard condition met
+deployment.apps/order-worker condition met
+deployment.apps/restaurant-bowl condition met
+deployment.apps/restaurant-curry condition met
+deployment.apps/restaurant-pizza condition met
+partitioned roll out complete: 1 new pods have been updated...
+partitioned roll out complete: 1 new pods have been updated...
+partitioned roll out complete: 1 new pods have been updated...
+cluster.postgresql.cnpg.io/food-delivery-db condition met
+Smoke test passed: http://localhost:8080

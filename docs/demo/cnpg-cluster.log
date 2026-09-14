@@ -1,0 +1,16 @@
+== kubectl get cluster food-delivery-db ==
+NAME               AGE   INSTANCES   READY   STATUS                     PRIMARY
+food-delivery-db   19m   2           2       Cluster in healthy state   food-delivery-db-1
+
+== kubectl describe cluster food-delivery-db (Kurzfassung) ==
+instances: 2
+readyInstances: 2
+phase: Cluster in healthy state
+currentPrimary: food-delivery-db-1
+targetPrimary: food-delivery-db-1
+imageName: ghcr.io/cloudnative-pg/postgresql:18.4-system-trixie
+
+== kubectl get pods -n food-delivery -l cnpg.io/cluster=food-delivery-db ==
+NAME                 READY   STATUS    RESTARTS   AGE   IP           NODE                        NOMINATED NODE   READINESS GATES
+food-delivery-db-1   1/1     Running   0          19m   10.42.0.20   k3d-delivery-lab-server-0   <none>           <none>
+food-delivery-db-2   1/1     Running   0          18m   10.42.2.18   k3d-delivery-lab-agent-0    <none>           <none>
