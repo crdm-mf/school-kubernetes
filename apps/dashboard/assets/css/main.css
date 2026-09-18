@@ -102,6 +102,9 @@ button { font: inherit; letter-spacing: 0; }
 .order-row strong, .order-row small { display: block; }
 .order-row strong { font: 600 12px/1 'Barlow Condensed', sans-serif; }
 .order-row small { margin-top: 3px; color: var(--muted); font-size: 9px; }
+.order-row__actions { display: flex; align-items: center; gap: 9px; }
+.trace-link { display: grid; place-items: center; color: var(--mint); }
+.trace-link:hover { color: var(--paper); }
 .order-state { width: 8px; height: 8px; background: var(--yellow); transform: rotate(45deg); }
 .order-state--courier_to_restaurant { background: var(--yellow); box-shadow: 0 0 0 3px rgba(232,204,85,.12); }
 .order-state--picked_up { background: var(--blue); }

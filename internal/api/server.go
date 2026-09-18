@@ -10,6 +10,8 @@ import (
 	"time"
 
 	"github.com/teko/food-delivery/internal/simulation"
+	"github.com/teko/food-delivery/internal/telemetry"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // Server exposes the simulation over REST and Server-Sent Events.
@@ -35,7 +37,7 @@ func NewServer(addr string, engine *simulation.Engine, commands Commands, logger
 	mux.HandleFunc("GET /metrics", server.metrics)
 	server.http = &http.Server{
 		Addr:              addr,
-		Handler:           requestLog(logger, cors(mux)),
+		Handler:           telemetry.InstrumentHTTP(requestLog(logger, cors(mux))),
 		ReadHeaderTimeout: 5 * time.Second,
 		IdleTimeout:       60 * time.Second,
 	}
@@ -182,7 +184,11 @@ func requestLog(logger *slog.Logger, next http.Handler) http.Handler {
 		started := time.Now()
 		next.ServeHTTP(w, r)
 		if r.URL.Path != "/health/live" && r.URL.Path != "/health/ready" {
-			logger.Info("http request", "method", r.Method, "path", r.URL.Path, "duration_ms", strconv.FormatInt(time.Since(started).Milliseconds(), 10))
+			fields := []any{"method", r.Method, "path", r.URL.Path, "duration_ms", strconv.FormatInt(time.Since(started).Milliseconds(), 10)}
+			if spanContext := trace.SpanContextFromContext(r.Context()); spanContext.IsValid() {
+				fields = append(fields, "trace_id", spanContext.TraceID().String(), "span_id", spanContext.SpanID().String())
+			}
+			logger.Info("http request", fields...)
 		}
 	})
 }

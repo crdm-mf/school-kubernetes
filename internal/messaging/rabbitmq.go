@@ -11,6 +11,11 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/teko/food-delivery/internal/events"
 	"github.com/teko/food-delivery/internal/model"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/trace"
 )
 
 const (
@@ -51,26 +56,45 @@ func NewPublisher(ctx context.Context, url string, logger *slog.Logger) (*Publis
 
 // Publish sends one event and waits for the broker confirmation.
 func (p *Publisher) Publish(ctx context.Context, event model.EventEnvelope) error {
+	ctx, span := otel.Tracer("github.com/teko/food-delivery/internal/messaging").Start(ctx, "rabbitmq.publish "+event.Type, trace.WithSpanKind(trace.SpanKindProducer))
+	defer span.End()
+	setEventAttributes(span, event)
+	span.SetAttributes(
+		attribute.String("messaging.system", "rabbitmq"),
+		attribute.String("messaging.destination.name", Exchange),
+		attribute.String("messaging.operation.type", "publish"),
+		attribute.String("messaging.rabbitmq.exchange", Exchange),
+		attribute.String("messaging.rabbitmq.routing_key", events.RoutingKey(event)),
+		attribute.String("messaging.message.id", event.ID),
+	)
 	raw, err := json.Marshal(event)
 	if err != nil {
+		recordError(span, err)
 		return fmt.Errorf("marshal event: %w", err)
 	}
+	headers := amqp.Table{}
+	propagation.TraceContext{}.Inject(ctx, amqpTableCarrier(headers))
 	confirmation, err := p.channel.PublishWithDeferredConfirmWithContext(ctx, Exchange, events.RoutingKey(event), false, false, amqp.Publishing{
 		ContentType:  "application/json",
 		DeliveryMode: amqp.Persistent,
 		MessageId:    event.ID,
 		Timestamp:    event.OccurredAt,
+		Headers:      headers,
 		Body:         raw,
 	})
 	if err != nil {
+		recordError(span, err)
 		return fmt.Errorf("publish %s: %w", event.Type, err)
 	}
 	confirmed, err := confirmation.WaitContext(ctx)
 	if err != nil {
+		recordError(span, err)
 		return fmt.Errorf("wait for publish confirmation: %w", err)
 	}
 	if !confirmed {
-		return fmt.Errorf("broker rejected event %s", event.ID)
+		err := fmt.Errorf("broker rejected event %s", event.ID)
+		recordError(span, err)
+		return err
 	}
 	return nil
 }
@@ -150,32 +174,8 @@ func Consume(ctx context.Context, url string, config ConsumerConfig, logger *slo
 						errCh <- fmt.Errorf("delivery channel closed")
 						return
 					}
-					var event model.EventEnvelope
-					if err := json.Unmarshal(delivery.Body, &event); err != nil {
-						logger.Error("invalid event moved to DLQ", "worker", workerID, "error", err)
-						if nackErr := delivery.Nack(false, false); nackErr != nil {
-							errCh <- fmt.Errorf("nack invalid message: %w", nackErr)
-							return
-						}
-						continue
-					}
-					if err := handler(ctx, event); err != nil {
-						if errors.Is(err, context.Canceled) {
-							if nackErr := delivery.Nack(false, true); nackErr != nil {
-								errCh <- fmt.Errorf("requeue interrupted event: %w", nackErr)
-								return
-							}
-							continue
-						}
-						logger.Error("event handler failed", "event_id", event.ID, "event_type", event.Type, "error", err)
-						if nackErr := delivery.Nack(false, false); nackErr != nil {
-							errCh <- fmt.Errorf("nack event: %w", nackErr)
-							return
-						}
-						continue
-					}
-					if err := delivery.Ack(false); err != nil {
-						errCh <- fmt.Errorf("ack event: %w", err)
+					if err := processDelivery(ctx, config.Queue, delivery, logger, handler); err != nil {
+						errCh <- err
 						return
 					}
 				}
@@ -190,6 +190,100 @@ func Consume(ctx context.Context, url string, config ConsumerConfig, logger *slo
 		return err
 	}
 }
+
+func processDelivery(ctx context.Context, queue string, delivery amqp.Delivery, logger *slog.Logger, handler Handler) error {
+	messageCtx := propagation.TraceContext{}.Extract(ctx, amqpTableCarrier(delivery.Headers))
+	messageCtx, span := otel.Tracer("github.com/teko/food-delivery/internal/messaging").Start(messageCtx, "rabbitmq.consume", trace.WithSpanKind(trace.SpanKindConsumer))
+	defer span.End()
+	span.SetAttributes(
+		attribute.String("messaging.system", "rabbitmq"),
+		attribute.String("messaging.destination.name", queue),
+		attribute.String("messaging.operation.type", "process"),
+		attribute.String("messaging.rabbitmq.exchange", Exchange),
+		attribute.String("messaging.rabbitmq.queue", queue),
+		attribute.String("messaging.rabbitmq.routing_key", delivery.RoutingKey),
+	)
+	if delivery.MessageId != "" {
+		span.SetAttributes(attribute.String("messaging.message.id", delivery.MessageId))
+	}
+
+	var event model.EventEnvelope
+	if err := json.Unmarshal(delivery.Body, &event); err != nil {
+		recordError(span, err)
+		logger.Error("invalid event moved to DLQ", "queue", queue, "error", err)
+		if nackErr := delivery.Nack(false, false); nackErr != nil {
+			return fmt.Errorf("nack invalid message: %w", nackErr)
+		}
+		return nil
+	}
+	span.SetName("rabbitmq.consume " + event.Type)
+	setEventAttributes(span, event)
+	if err := handler(messageCtx, event); err != nil {
+		if errors.Is(err, context.Canceled) {
+			recordError(span, err)
+			if nackErr := delivery.Nack(false, true); nackErr != nil {
+				return fmt.Errorf("requeue interrupted event: %w", nackErr)
+			}
+			return nil
+		}
+		recordError(span, err)
+		logger.Error("event handler failed", "event_id", event.ID, "event_type", event.Type, "error", err)
+		if nackErr := delivery.Nack(false, false); nackErr != nil {
+			return fmt.Errorf("nack event: %w", nackErr)
+		}
+		return nil
+	}
+	if err := delivery.Ack(false); err != nil {
+		recordError(span, err)
+		return fmt.Errorf("ack event: %w", err)
+	}
+	return nil
+}
+
+func setEventAttributes(span trace.Span, event model.EventEnvelope) {
+	span.SetAttributes(
+		attribute.String("food_delivery.event.type", event.Type),
+		attribute.String("food_delivery.event.id", event.ID),
+		attribute.String("food_delivery.correlation_id", event.CorrelationID),
+		attribute.String("food_delivery.causation_id", event.CausationID),
+	)
+}
+
+func recordError(span trace.Span, err error) {
+	span.RecordError(err)
+	span.SetStatus(codes.Error, err.Error())
+}
+
+type amqpTableCarrier amqp.Table
+
+func (c amqpTableCarrier) Get(key string) string {
+	value, ok := c[key]
+	if !ok {
+		return ""
+	}
+	switch value := value.(type) {
+	case string:
+		return value
+	case []byte:
+		return string(value)
+	default:
+		return fmt.Sprint(value)
+	}
+}
+
+func (c amqpTableCarrier) Set(key, value string) {
+	c[key] = value
+}
+
+func (c amqpTableCarrier) Keys() []string {
+	keys := make([]string, 0, len(c))
+	for key := range c {
+		keys = append(keys, key)
+	}
+	return keys
+}
+
+var _ propagation.TextMapCarrier = amqpTableCarrier{}
 
 func declareExchanges(channel *amqp.Channel) error {
 	if err := channel.ExchangeDeclare(Exchange, "topic", true, false, false, false, nil); err != nil {

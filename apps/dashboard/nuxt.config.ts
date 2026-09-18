@@ -5,6 +5,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       apiBase: process.env.NUXT_PUBLIC_API_BASE || '',
+      grafanaExploreUrl: process.env.NUXT_PUBLIC_GRAFANA_EXPLORE_URL || '',
     },
   },
   app: {

@@ -18,12 +18,15 @@ import (
 	"github.com/teko/food-delivery/internal/persistence"
 	"github.com/teko/food-delivery/internal/scenario"
 	"github.com/teko/food-delivery/internal/simulation"
+	"github.com/teko/food-delivery/internal/telemetry"
 )
 
 func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
+	shutdownTracing := telemetry.InitTracing(ctx, "control-api", logger)
+	defer telemetry.ShutdownTracing(shutdownTracing, logger)
 
 	mode := env("APP_MODE", "standalone")
 	instance := env("POD_NAME", "local")

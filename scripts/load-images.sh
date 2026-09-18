@@ -10,7 +10,8 @@ k3d image import -c "${CLUSTER}" \
   "food-delivery-restaurant-worker:${TAG}" \
   "food-delivery-courier-simulator:${TAG}" \
   "food-delivery-order-worker:${TAG}" \
+  "food-delivery-cluster-observer:${TAG}" \
   "food-delivery-migrate:${TAG}" \
   "food-delivery-dashboard:${TAG}"
 
-printf 'Block-6-Images wurden in den k3d-Cluster %s importiert.\n' "${CLUSTER}"
+printf 'Images wurden in den k3d-Cluster %s importiert.\n' "${CLUSTER}"

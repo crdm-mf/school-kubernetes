@@ -24,6 +24,8 @@ func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
+	shutdownTracing := telemetry.InitTracing(ctx, "courier-simulator", logger)
+	defer telemetry.ShutdownTracing(shutdownTracing, logger)
 	url := appenv.String("RABBITMQ_URL", "amqp://delivery:delivery@localhost:5672/")
 	podName := appenv.String("POD_NAME", "courier-simulator-0")
 	courier := scenario.CourierForOrdinal(scenario.OrdinalFromPodName(podName))

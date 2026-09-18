@@ -10,6 +10,7 @@ $Images = @(
     "food-delivery-restaurant-worker:${Tag}",
     "food-delivery-courier-simulator:${Tag}",
     "food-delivery-order-worker:${Tag}",
+    "food-delivery-cluster-observer:${Tag}",
     "food-delivery-migrate:${Tag}",
     "food-delivery-dashboard:${Tag}"
 )
@@ -17,4 +18,4 @@ $Images = @(
 k3d image import -c $Cluster $Images
 if ($LASTEXITCODE -ne 0) { throw "Image-Import in den Cluster $Cluster fehlgeschlagen." }
 
-Write-Host "Block-6-Images wurden in den k3d-Cluster $Cluster importiert."
+Write-Host "Images wurden in den k3d-Cluster $Cluster importiert."

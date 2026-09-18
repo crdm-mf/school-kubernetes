@@ -23,6 +23,8 @@ func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
+	shutdownTracing := telemetry.InitTracing(ctx, "customer-simulator", logger)
+	defer telemetry.ShutdownTracing(shutdownTracing, logger)
 	url := appenv.String("RABBITMQ_URL", "amqp://delivery:delivery@localhost:5672/")
 	metrics := &telemetry.Metrics{Service: "customer-simulator"}
 	go workerutil.RunTelemetry(ctx, cancel, metrics, logger)

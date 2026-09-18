@@ -6,7 +6,7 @@ CONTEXT=${CONTEXT:-k3d-delivery-lab}
 CLUSTER=${CLUSTER:-delivery-lab}
 
 CONTEXT="${CONTEXT}" "${ROOT}/platform/cloudnative-pg/install.sh"
-CONTEXT="${CONTEXT}" "${ROOT}/platform/monitoring/install.sh"
+CONTEXT="${CONTEXT}" sh "${ROOT}/platform/monitoring/install.sh"
 TAG=local "${ROOT}/scripts/build-images.sh"
 CLUSTER="${CLUSTER}" TAG=local "${ROOT}/scripts/load-images.sh"
 if kubectl --context "${CONTEXT}" get namespace food-delivery >/dev/null 2>&1; then

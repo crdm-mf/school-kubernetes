@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/exaring/otelpgx"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/teko/food-delivery/internal/events"
@@ -28,8 +29,17 @@ type Repository struct {
 func Connect(ctx context.Context, databaseURL string) (*Repository, error) {
 	ticker := time.NewTicker(2 * time.Second)
 	defer ticker.Stop()
+	tracer := otelpgx.NewTracer(
+		otelpgx.WithDisableSQLStatementInAttributes(),
+		otelpgx.WithDisableConnectionDetailsInAttributes(),
+	)
 	for {
-		pool, err := pgxpool.New(ctx, databaseURL)
+		config, err := pgxpool.ParseConfig(databaseURL)
+		if err != nil {
+			return nil, fmt.Errorf("parse PostgreSQL connection string: %w", err)
+		}
+		config.ConnConfig.Tracer = tracer
+		pool, err := pgxpool.NewWithConfig(ctx, config)
 		if err == nil {
 			err = pool.Ping(ctx)
 			if err == nil {

@@ -1,0 +1,33 @@
+replicas: 1
+
+tempo:
+  reportingEnabled: false
+  retention: 2h
+  server:
+    http_listen_port: 3200
+  receivers:
+    otlp:
+      protocols:
+        grpc:
+          endpoint: 0.0.0.0:4317
+  storage:
+    trace:
+      backend: local
+      local:
+        path: /var/tempo/traces
+      wal:
+        path: /var/tempo/wal
+  resources:
+    requests:
+      cpu: 50m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+
+persistence:
+  enabled: true
+  size: 10Gi
+
+service:
+  type: ClusterIP

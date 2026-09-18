@@ -50,3 +50,38 @@ Der Order Worker ist der einzige Schreiber des fachlichen Zustands. Er verarbeit
 4. Transaktion committen und erst danach die RabbitMQ-Nachricht bestätigen.
 
 Die Anwendungen verwenden den von CloudNativePG verwalteten `food-delivery-db-rw`-Service. Dieser zeigt nach einem Failover automatisch auf den neuen Primary.
+
+## Block 7: Observability und Resilienz
+
+Prometheus sammelt Metriken von den Workloads und RabbitMQ. Grafana stellt
+Metriken und das Betriebs-Dashboard bereit. Der Cluster Observer ergänzt den
+fachlichen Zustand um die tatsächlichen Kubernetes-Replica- und Ready-Zahlen.
+Failure- und Skalierungsdemos zeigen, wie Rückstau, Readiness und Rollouts
+zusammenwirken.
+
+## Optionale Erweiterung: Distributed Tracing
+
+Distributed Tracing ist kein eigener Block, sondern eine freiwillige Erweiterung
+des Observability-Stands. OpenTelemetry instrumentiert die Control API,
+RabbitMQ und die PostgreSQL-Zugriffe des Order Workers. Der W3C-Kontext läuft
+über AMQP-Header, während `correlation_id` als unveränderte fachliche Order-ID
+im Event bleibt. Grafana Explore und der optionale Dashboard-Link machen eine
+einzelne Bestellung über mehrere Services nachvollziehbar. Die vollständige
+Beschreibung mit Betriebs- und TraceQL-Beispielen steht in
+[docs/tracing.md](tracing.md).
+
+```mermaid
+flowchart LR
+    API[Control API] -->|Event + traceparent| MQ[RabbitMQ]
+    MQ -->|Event + traceparent| Worker[Worker]
+    Worker -->|SQL| DB[(PostgreSQL)]
+
+    API -. OTLP .-> Tempo[Tempo]
+    Worker -. OTLP .-> Tempo
+    Tempo --> Grafana[Grafana Explore]
+    Dashboard[Dashboard] -. Order-ID-Suche .-> Grafana
+```
+
+Die durchgezogenen Kanten sind der fachliche Ablauf. Die gestrichelten Kanten
+sind ausschließlich Telemetrie: Sie ändern weder Event-Payload noch
+Geschäftslogik.

@@ -38,7 +38,7 @@ func (m *Metrics) Run(ctx context.Context, addr string) error {
 		fmt.Fprintf(w, "food_delivery_events_consumed_total{service=%q} %d\n", m.Service, m.Consumed.Load())
 		fmt.Fprintf(w, "food_delivery_failures_total{service=%q} %d\n", m.Service, m.Failures.Load())
 	})
-	server := &http.Server{Addr: addr, Handler: mux, ReadHeaderTimeout: 3 * time.Second}
+	server := &http.Server{Addr: addr, Handler: InstrumentHTTP(mux), ReadHeaderTimeout: 3 * time.Second}
 
 	errCh := make(chan error, 1)
 	go func() {

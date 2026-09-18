@@ -4,6 +4,7 @@ import {
   Bike,
   Boxes,
   CircleDot,
+  ExternalLink,
   Map as MapIcon,
   Network,
   PackagePlus,
@@ -24,6 +25,8 @@ const view = ref<'city' | 'system'>('city')
 const selected = ref<SelectedEntity>()
 const cityStage = ref<{ zoomIn: () => void; zoomOut: () => void; resetCamera: () => void }>()
 const { data: uiRuntime } = await useFetch<{ instance: string }>('/ui-instance', { default: () => ({ instance: 'dashboard' }) })
+const runtimeConfig = useRuntimeConfig()
+const grafanaExploreUrl = runtimeConfig.public.grafanaExploreUrl as string
 
 const statusLabel: Record<string, string> = {
   created: 'Eingegangen',
@@ -46,6 +49,19 @@ const eventLabel = (type: string) => ({
 
 const shortId = (id: string) => id.slice(0, 7).toUpperCase()
 const eventTime = (date: string) => new Intl.DateTimeFormat('de-CH', { hour: '2-digit', minute: '2-digit', second: '2-digit' }).format(new Date(date))
+const traceQuery = (orderId: string) => `{ span.food_delivery.correlation_id = "${orderId}" }`
+const hasTrace = (status: string) => status === 'delivered' || status === 'failed'
+const traceUrl = (orderId: string) => {
+  if (!grafanaExploreUrl) return ''
+  const pane = {
+    trc: {
+      datasource: 'tempo',
+      queries: [{ refId: 'A', queryType: 'traceql', query: traceQuery(orderId), filters: [] }],
+      range: { from: 'now-2h', to: 'now' },
+    },
+  }
+  return `${grafanaExploreUrl.replace(/\/$/, '')}/explore?schemaVersion=1&panes=${encodeURIComponent(JSON.stringify(pane))}`
+}
 </script>
 
 <template>
@@ -105,7 +121,18 @@ const eventTime = (date: string) => new Intl.DateTimeFormat('de-CH', { hour: '2-
           <div v-if="snapshot.orders.length === 0" class="empty-state">Noch keine Bestellungen</div>
           <div v-for="order in snapshot.orders.slice(0, 7)" :key="order.id" class="order-row">
             <div><strong>#{{ shortId(order.id) }}</strong><small>{{ statusLabel[order.status] }}</small></div>
-            <span :class="`order-state order-state--${order.status}`" />
+            <div class="order-row__actions">
+              <a
+                v-if="hasTrace(order.status) && traceUrl(order.id)"
+                :href="traceUrl(order.id)"
+                class="trace-link"
+                target="_blank"
+                rel="noreferrer"
+                :title="`Vollständigen Trace für Bestellung ${shortId(order.id)} in Grafana öffnen`"
+                :aria-label="`Vollständigen Trace für Bestellung ${shortId(order.id)} in Grafana öffnen`"
+              ><ExternalLink :size="13" /></a>
+              <span :class="`order-state order-state--${order.status}`" />
+            </div>
           </div>
         </section>
 

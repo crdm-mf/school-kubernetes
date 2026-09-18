@@ -1,0 +1,129 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dashboard
+  namespace: food-delivery
+spec:
+  template:
+    spec:
+      containers:
+        - name: dashboard
+          env:
+            - name: NUXT_PUBLIC_GRAFANA_EXPLORE_URL
+              value: http://localhost:3000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: control-api
+  namespace: food-delivery
+spec:
+  template:
+    spec:
+      containers:
+        - name: control-api
+          env:
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: http://tempo.monitoring.svc.cluster.local:4317
+            - name: OTEL_EXPORTER_OTLP_INSECURE
+              value: "true"
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: customer-simulator
+  namespace: food-delivery
+spec:
+  template:
+    spec:
+      containers:
+        - name: customer-simulator
+          env:
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: http://tempo.monitoring.svc.cluster.local:4317
+            - name: OTEL_EXPORTER_OTLP_INSECURE
+              value: "true"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: restaurant-pizza
+  namespace: food-delivery
+spec:
+  template:
+    spec:
+      containers:
+        - name: restaurant-worker
+          env:
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: http://tempo.monitoring.svc.cluster.local:4317
+            - name: OTEL_EXPORTER_OTLP_INSECURE
+              value: "true"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: restaurant-bowl
+  namespace: food-delivery
+spec:
+  template:
+    spec:
+      containers:
+        - name: restaurant-worker
+          env:
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: http://tempo.monitoring.svc.cluster.local:4317
+            - name: OTEL_EXPORTER_OTLP_INSECURE
+              value: "true"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: restaurant-curry
+  namespace: food-delivery
+spec:
+  template:
+    spec:
+      containers:
+        - name: restaurant-worker
+          env:
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: http://tempo.monitoring.svc.cluster.local:4317
+            - name: OTEL_EXPORTER_OTLP_INSECURE
+              value: "true"
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: courier-simulator
+  namespace: food-delivery
+spec:
+  template:
+    spec:
+      containers:
+        - name: courier-simulator
+          env:
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: http://tempo.monitoring.svc.cluster.local:4317
+            - name: OTEL_EXPORTER_OTLP_INSECURE
+              value: "true"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-worker
+  namespace: food-delivery
+spec:
+  template:
+    spec:
+      containers:
+        - name: order-worker
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: http://tempo.monitoring.svc.cluster.local:4317
+            - name: OTEL_EXPORTER_OTLP_INSECURE
+              value: "true"

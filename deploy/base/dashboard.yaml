@@ -27,6 +27,8 @@ spec:
           env:
             - name: NUXT_PUBLIC_API_BASE
               value: http://localhost:8081
+            - name: NUXT_PUBLIC_GRAFANA_EXPLORE_URL
+              value: ""
           readinessProbe:
             httpGet:
               path: /
